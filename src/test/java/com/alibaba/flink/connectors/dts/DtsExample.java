@@ -22,6 +22,7 @@ public class DtsExample {
                         parameterTool.get("broker-url"),
                         parameterTool.get("topic"),
                         parameterTool.get("sid"),
+                        parameterTool.get("group"),
                         parameterTool.get("user"),
                         parameterTool.get("password"),
                         Integer.valueOf(parameterTool.get("checkpoint")),

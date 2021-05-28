@@ -16,6 +16,7 @@ import java.util.Set;
 import static com.alibaba.flink.connectors.dts.table.DtsOptions.DTS_BOOTSTRAP_SERVERS;
 import static com.alibaba.flink.connectors.dts.table.DtsOptions.TOPIC;
 import static com.alibaba.flink.connectors.dts.table.DtsOptions.DTS_SID;
+import static com.alibaba.flink.connectors.dts.table.DtsOptions.DTS_GROUP;
 import static com.alibaba.flink.connectors.dts.table.DtsOptions.DTS_USER;
 import static com.alibaba.flink.connectors.dts.table.DtsOptions.DTS_PASSWORD;
 import static com.alibaba.flink.connectors.dts.table.DtsOptions.DTS_CHECKPOINT;
@@ -40,7 +41,6 @@ public class DtsDynamicTableFactory implements DynamicTableSourceFactory {
         final Set<ConfigOption<?>> options = new HashSet<>();
         options.add(DTS_BOOTSTRAP_SERVERS);
         options.add(TOPIC);
-        options.add(DTS_SID);
         options.add(DTS_USER);
         options.add(DTS_PASSWORD);
         options.add(DTS_CHECKPOINT);
@@ -51,6 +51,8 @@ public class DtsDynamicTableFactory implements DynamicTableSourceFactory {
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
         final Set<ConfigOption<?>> options = new HashSet<>();
+        options.add(DTS_SID);
+        options.add(DTS_GROUP);
         options.add(FactoryUtil.FORMAT);
         return options;
     }
@@ -65,6 +67,7 @@ public class DtsDynamicTableFactory implements DynamicTableSourceFactory {
         String server = String.valueOf(tableOptions.get(DTS_BOOTSTRAP_SERVERS));
         String topic = String.valueOf(tableOptions.get(TOPIC));
         String sid = String.valueOf(tableOptions.get(DTS_SID));
+        String group = String.valueOf(DTS_GROUP);
         String user = String.valueOf(tableOptions.get(DTS_USER));
         String password = String.valueOf(tableOptions.get(DTS_PASSWORD));
         long checkpoint = Long.parseLong(tableOptions.get(DTS_CHECKPOINT));
@@ -78,7 +81,7 @@ public class DtsDynamicTableFactory implements DynamicTableSourceFactory {
 
         final int[] valueProjection = createValueFormatProjection(tableOptions, physicalDataType);
 
-        return new DtsDynamicSource(server, topic, sid, user , password, checkpoint,
+        return new DtsDynamicSource(server, topic, sid, group, user , password, checkpoint,
                 physicalDataType, valueDecodingFormat, valueProjection);
     }
 

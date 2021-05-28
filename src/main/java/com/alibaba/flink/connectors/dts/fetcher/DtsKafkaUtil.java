@@ -14,6 +14,7 @@ public class DtsKafkaUtil {
             String brokerUrl,
             String topic,
             String sid,
+            String group,
             String user,
             String password,
             Properties kafkaExtraProps) {
@@ -28,7 +29,7 @@ public class DtsKafkaUtil {
 
         props.setProperty(SaslConfigs.SASL_MECHANISM, "PLAIN");
         props.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, brokerUrl);
-        props.setProperty(ConsumerConfig.GROUP_ID_CONFIG, sid);
+        props.setProperty(ConsumerConfig.GROUP_ID_CONFIG, StringUtils.isNotEmpty(group) ? group : sid);
         // disable auto commit
         props.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
 
@@ -52,8 +53,15 @@ public class DtsKafkaUtil {
     }
 
     public static String buildJaasConfig(String sid, String user, String password) {
-        String jaasTemplate =
-                "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"%s-%s\" password=\"%s\";";
-        return String.format(jaasTemplate, user, sid, password);
+
+        if (StringUtils.isNotEmpty(sid)) {
+            String jaasTemplate =
+                    "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"%s-%s\" password=\"%s\";";
+            return String.format(jaasTemplate, user, sid, password);
+        } else {
+            String jaasTemplate =
+                    "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"%s\" password=\"%s\";";
+            return String.format(jaasTemplate, user, password);
+        }
     }
 }

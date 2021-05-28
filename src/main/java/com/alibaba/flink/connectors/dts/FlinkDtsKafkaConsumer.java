@@ -57,8 +57,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 
 import static org.apache.flink.util.PropertiesUtil.getBoolean;
 
-public class FlinkDtsKafkaConsumer<T> extends RichSourceFunction<T>
-        implements CheckpointListener, ResultTypeQueryable<T>, CheckpointedFunction {
+public class FlinkDtsKafkaConsumer<T> extends FlinkDtsConsumer<T> {
 
     protected static final Logger LOG = LoggerFactory.getLogger(FlinkDtsKafkaConsumer.class);
 
@@ -230,17 +229,19 @@ public class FlinkDtsKafkaConsumer<T> extends RichSourceFunction<T>
             String brokerUrl,
             String topic,
             String sid,
+            String group,
             String user,
             String password,
             long startupOffsetsTimestamp,
             KafkaDeserializationSchema valueDeserializer) {
-        this(brokerUrl, topic, sid, user, password, startupOffsetsTimestamp, valueDeserializer, null);
+        this(brokerUrl, topic, sid, group, user, password, startupOffsetsTimestamp, valueDeserializer, null);
     }
 
     public FlinkDtsKafkaConsumer(
             String brokerUrl,
             String topic,
             String sid,
+            String group,
             String user,
             String password,
             long startupOffsetsTimestamp,
@@ -250,7 +251,7 @@ public class FlinkDtsKafkaConsumer<T> extends RichSourceFunction<T>
         this.topicsDescriptor = new KafkaTopicsDescriptor(Collections.singletonList(topic), null);
         this.deserializer = valueDeserializer;
 
-        Properties props = DtsKafkaUtil.getKafkaProperties(brokerUrl, topic, sid, user, password, kafkaExtraProps);
+        Properties props = DtsKafkaUtil.getKafkaProperties(brokerUrl, topic, sid, group, user, password, kafkaExtraProps);
 
         this.properties = props;
 

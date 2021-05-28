@@ -48,7 +48,7 @@ ls -la ~/.m2/repository/com/alibaba/flink/flink-dts-connector/1.1-SNAPSHOT
 ```
 
 
-### 3、使用：
+### 3、使用示例：
 
 flink-dts-demo中有使用的实例： https://github.com/silly-fofo/flink-dts-demo 你可以参考下，有两种用法，一种是Flink底层接口DataStream API，一种是Flink SQL
 
@@ -82,7 +82,7 @@ flink-dts-demo中有使用的实例： https://github.com/silly-fofo/flink-dts-d
                         })
 ```
 
-#### Flink SQL:
+#### Flink SQL（DTS订阅）:
 
 dts.server、topic、dts.sid、dts.password、dts.checkpoint参数参考：
 https://help.aliyun.com/document_detail/121239.html?spm=a2c4g.11174283.6.896.7ff86ad1UiqVz1
@@ -98,10 +98,33 @@ dts-cdc.table.name必须是单张表，格式为：库.表
                         + " WATERMARK FOR ts AS ts - INTERVAL '5' SECOND"
                         + ") with (\n"
                         + "'connector' = 'dts',"
-                        + "'dts.server' = 'dts-cn-hangzhou.aliyuncs.com:18001',"
+                        + "'dts.server' = '<dts proxy url>',"
                         + "'topic' = 'xxx',"
                         + "'dts.sid' = 'xxx', "
-                        + "'dts.user' = 'yanmen', "
+                        + "'dts.user' = 'xxx', "
+                        + "'dts.password' = '******',"
+                        + "'dts.checkpoint' = 'xxx', "
+                        + "'dts-cdc.table.name' = 'yanmen_source.test',"
+                        + "'format' = 'dts-cdc')";
+```
+
+#### Flink SQL（用户自建Kafka(DTS同步任务使用dts avro格式)):
+
+注意和DTS订阅任务使用de区别是没有dts.sid的属性，可以添加dts.group的属性
+
+```
+                "create table `dts` (\n"
+                        + "  `ts` TIMESTAMP(3) METADATA FROM 'timestamp',\n"
+                        + "  `id` bigint,\n"
+                        + "  `name` varchar,\n"
+                        + "  `age` bigint,\n"
+                        + " WATERMARK FOR ts AS ts - INTERVAL '5' SECOND"
+                        + ") with (\n"
+                        + "'connector' = 'dts',"
+                        + "'dts.server' = '<kafka-broker-url>',"
+                        + "'topic' = 'xxx',"
+                        + "'dts.group' = 'xxx', "
+                        + "'dts.user' = 'xxx', "
                         + "'dts.password' = '******',"
                         + "'dts.checkpoint' = 'xxx', "
                         + "'dts-cdc.table.name' = 'yanmen_source.test',"

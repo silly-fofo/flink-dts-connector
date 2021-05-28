@@ -1,6 +1,9 @@
 package com.alibaba.flink.connectors.dts.table;
 
+import com.alibaba.flink.connectors.dts.FlinkDtsConsumer;
 import com.alibaba.flink.connectors.dts.FlinkDtsKafkaConsumer;
+import com.alibaba.flink.connectors.dts.FlinkDtsRawConsumer;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
@@ -64,6 +67,7 @@ public class DtsDynamicSource implements ScanTableSource, SupportsReadingMetadat
     protected final String server;
     protected final String topic;
     protected final String sid;
+    protected final String group;
     protected final String user;
     protected final String password;
     protected final long checkpoint;
@@ -71,7 +75,7 @@ public class DtsDynamicSource implements ScanTableSource, SupportsReadingMetadat
     /** Data type to configure the formats. */
     protected final DataType physicalDataType;
 
-    public DtsDynamicSource(String server, String topic, String sid, String user, String password, long checkpoint,
+    public DtsDynamicSource(String server, String topic, String sid, String group, String user, String password, long checkpoint,
                             DataType physicalDataType,
                             DecodingFormat<DeserializationSchema<RowData>> valueDecodingFormat,
                             int[] valueProjection) {
@@ -79,6 +83,7 @@ public class DtsDynamicSource implements ScanTableSource, SupportsReadingMetadat
         this.server = server;
         this.topic = topic;
         this.sid = sid;
+        this.group = group;
         this.user = user;
         this.password = password;
         this.checkpoint = checkpoint;
@@ -110,7 +115,7 @@ public class DtsDynamicSource implements ScanTableSource, SupportsReadingMetadat
         final TypeInformation<RowData> producedTypeInfo =
                 context.createTypeInformation(producedDataType);
 
-        final FlinkDtsKafkaConsumer<RowData> dtsConsumer =
+        final FlinkDtsConsumer<RowData> dtsConsumer =
                 createDtsConsumer(valueDeserialization, producedTypeInfo);
 
         return SourceFunctionProvider.of(dtsConsumer, false);
@@ -129,7 +134,7 @@ public class DtsDynamicSource implements ScanTableSource, SupportsReadingMetadat
         return format.createRuntimeDecoder(context, physicalFormatDataType);
     }
 
-    private FlinkDtsKafkaConsumer createDtsConsumer(
+    private FlinkDtsConsumer createDtsConsumer(
             DeserializationSchema<RowData> valueDeserialization,
             TypeInformation<RowData> producedTypeInfo) {
 
@@ -169,9 +174,16 @@ public class DtsDynamicSource implements ScanTableSource, SupportsReadingMetadat
                         metadataConverters,
                         producedTypeInfo);
 
+        FlinkDtsConsumer dtsConsumer;
 
-        FlinkDtsKafkaConsumer dtsConsumer = new FlinkDtsKafkaConsumer(this.server, this.topic, this.sid, this.user,
-                                                this.password, this.checkpoint, kafkaDeserializer);
+        //no sid means normal kafka
+        if (StringUtils.isEmpty(this.sid)) {
+            dtsConsumer = new FlinkDtsRawConsumer(this.server, this.topic, this.sid, this.group, this.user,
+                    this.password, this.checkpoint, kafkaDeserializer);
+        } else {
+            dtsConsumer = new FlinkDtsKafkaConsumer(this.server, this.topic, this.sid, this.group, this.user,
+                    this.password, this.checkpoint, kafkaDeserializer);
+        }
 
         return dtsConsumer;
     }
@@ -183,6 +195,7 @@ public class DtsDynamicSource implements ScanTableSource, SupportsReadingMetadat
                         server,
                         topic,
                         sid,
+                        group,
                         user,
                         password,
                         checkpoint,
