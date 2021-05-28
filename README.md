@@ -4,7 +4,7 @@
 https://help.aliyun.com/document_detail/145715.html?spm=a2c4g.11174283.6.885.1f026ad1gDFilP
 
 #### 订阅的交互模式如下：
-![](https://github.com/silly-fofo/flink-dts-connector/tree/master/imgs/subscribeMode.png)
+![](https://img-blog.csdnimg.cn/2021052811415379.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L05pcHBsZXI=,size_16,color_FFFFFF,t_70#pic_center)
 
 #### 订阅client一般有如下使用方式
 
@@ -34,7 +34,7 @@ Dstore是单节点，可能发生切换，切换之后用户消费位点的offse
 #### 1、本地maven库安装需要的flink-dts-connector包：
 这个工程是dts connector，下载之后，执行mvn clean install,检查自己目录下有如下文件：
 ls -la ~/.m2/repository/com/alibaba/flink/flink-dts-connector/1.1-SNAPSHOT
-![](https://github.com/silly-fofo/flink-dts-connector/tree/master/imgs/subscribeMaven.png)
+![](https://img-blog.csdnimg.cn/20210528114129954.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L05pcHBsZXI=,size_16,color_FFFFFF,t_70#pic_center)
 
 ### 2、自己项目中的使用：
 然后在自己的项目中进行依赖
