@@ -1,5 +1,6 @@
-package com.alibaba.flink.connectors.dts;
+package com.alibaba.flink.connectors.dts.datastream;
 
+import com.alibaba.flink.connectors.dts.FlinkDtsKafkaConsumer;
 import com.alibaba.flink.connectors.dts.formats.internal.record.DtsRecord;
 import com.alibaba.flink.connectors.dts.formats.internal.record.OperationType;
 import com.alibaba.flink.connectors.dts.formats.raw.DtsRecordDeserializationSchema;

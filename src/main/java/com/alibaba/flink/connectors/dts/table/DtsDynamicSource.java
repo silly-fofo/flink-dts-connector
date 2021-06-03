@@ -26,7 +26,6 @@ import org.apache.flink.table.types.utils.DataTypeUtils;
 import org.apache.flink.util.Preconditions;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
-import org.apache.flink.table.connector.source.SourceProvider;
 
 import javax.annotation.Nullable;
 import java.io.Serializable;

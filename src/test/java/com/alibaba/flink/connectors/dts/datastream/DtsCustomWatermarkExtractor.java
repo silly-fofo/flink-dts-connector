@@ -1,4 +1,4 @@
-package com.alibaba.flink.connectors.dts;
+package com.alibaba.flink.connectors.dts.datastream;
 
 import com.alibaba.flink.connectors.dts.formats.internal.record.DtsRecord;
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;

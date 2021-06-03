@@ -36,7 +36,7 @@ public class DtsOptions {
                             "Required consumer channel id in DTS consumer.");
 
     public static final ConfigOption<String> DTS_GROUP =
-            ConfigOptions.key("dts.sid")
+            ConfigOptions.key("dts.group")
                     .noDefaultValue()
                     .withDescription(
                             "Required consumer group in DTS consumer.");

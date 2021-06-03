@@ -71,7 +71,6 @@ public class DTSSubscribeTableSourceFactory implements DeserializationFormatFact
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
         Set<ConfigOption<?>> options = new HashSet<>();
-        options.add(DTS_NEEDED_TABLE);
         return options;
     }
 }

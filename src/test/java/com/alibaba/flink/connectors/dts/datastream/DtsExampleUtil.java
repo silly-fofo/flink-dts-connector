@@ -1,4 +1,4 @@
-package com.alibaba.flink.connectors.dts;
+package com.alibaba.flink.connectors.dts.datastream;
 
 import com.alibaba.flink.connectors.dts.util.DtsUtil;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
