@@ -70,7 +70,7 @@ public class DtsExampleUtil {
         return env;
     }
 
-    private static Properties initLog4j() {
+    public static Properties initLog4j() {
         Properties properties = new Properties();
         InputStream log4jInput = null;
         try {

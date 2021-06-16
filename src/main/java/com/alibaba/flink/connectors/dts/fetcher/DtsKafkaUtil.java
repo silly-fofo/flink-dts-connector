@@ -23,8 +23,6 @@ public class DtsKafkaUtil {
         if (StringUtils.isNotEmpty(user) && StringUtils.isNotEmpty(password)) {
             props.setProperty(SaslConfigs.SASL_JAAS_CONFIG, buildJaasConfig(sid, user, password));
             props.setProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_PLAINTEXT");
-        } else {
-            props.setProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "PLAINTEXT");
         }
 
         props.setProperty(SaslConfigs.SASL_MECHANISM, "PLAIN");

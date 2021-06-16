@@ -1,5 +1,6 @@
 package com.alibaba.flink.connectors.dts.sql;
 
+import com.alibaba.flink.connectors.dts.datastream.DtsExampleUtil;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
@@ -18,6 +19,8 @@ public class YanmenTableISelectTCaseTest {
     protected static StreamTableEnvironment tEnv;
 
     public static void setup(String[] args) throws IOException {
+
+        DtsExampleUtil.initLog4j();
 
         // parse input arguments
         final ParameterTool parameterTool = ParameterTool.fromArgs(args);
@@ -64,13 +67,13 @@ public class YanmenTableISelectTCaseTest {
                         + " WATERMARK FOR ts AS ts - INTERVAL '5' SECOND"
                         + ") with (\n"
                         + "'connector' = 'dts',"
-                        + "'dts.server' = 'dts-cn-hangzhou.aliyuncs.com:18001',"
-                        + "'topic' = 'cn_hangzhou_rm_bp11tv2923n87081s_rdsdt_dtsacct',"
-                        + "'dts.sid' = 'dtshyye52491877bfk', "
-                        + "'dts.user' = 'yanmen', "
-                        + "'dts.password' = 'yanmen123',"
-                        + "'dts.checkpoint' = '1622638753', "
-                        + "'dts-cdc.table.name' = 'yanmen_source.test',"
+                        + "'dts.server' = 'xxx:xxx',"
+                        + "'topic' = 'xxx',"
+                        + "'dts.sid' = 'xxx', "
+                        + "'dts.user' = 'xxx',"
+                        + "'dts.password' = 'xxx',"
+                        + "'dts.checkpoint' = 'xxx', "
+                        + "'dts-cdc.table.name' = 'xxx.xxx',"
                         + "'format' = 'dts-cdc')";
 
         tEnv.executeSql(createTable);
