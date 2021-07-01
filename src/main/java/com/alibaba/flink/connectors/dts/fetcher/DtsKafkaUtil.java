@@ -23,9 +23,9 @@ public class DtsKafkaUtil {
         if (StringUtils.isNotEmpty(user) && StringUtils.isNotEmpty(password)) {
             props.setProperty(SaslConfigs.SASL_JAAS_CONFIG, buildJaasConfig(sid, user, password));
             props.setProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_PLAINTEXT");
+            props.setProperty(SaslConfigs.SASL_MECHANISM, "PLAIN");
         }
 
-        props.setProperty(SaslConfigs.SASL_MECHANISM, "PLAIN");
         props.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, brokerUrl);
         props.setProperty(ConsumerConfig.GROUP_ID_CONFIG, StringUtils.isNotEmpty(group) ? group : sid);
         // disable auto commit
@@ -41,7 +41,7 @@ public class DtsKafkaUtil {
         props.setProperty(
                 ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, ClusterSwitchListener.class.getName());
 
-        props.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "none");
+        props.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         if (kafkaExtraProps != null) {
             props.putAll(kafkaExtraProps);

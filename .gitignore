@@ -3,5 +3,6 @@ target
 flink-dts-connector.iml
 .DS_Store
 
-src/test/java/com/alibaba/flink/connectors/dts/sql/YanmenTableISelectTCaseTest
+src/test/java/com/alibaba/flink/connectors/dts/sql/YanmenNormalKafkaTableISelectTCaseTest.java
+src/test/java/com/alibaba/flink/connectors/dts/sql/YanmenSubscribeTableISelectTCaseTest.java
 

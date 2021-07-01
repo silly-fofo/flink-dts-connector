@@ -64,12 +64,12 @@ public class DtsDynamicTableFactory implements DynamicTableSourceFactory {
         final ReadableConfig tableOptions = helper.getOptions();
 
         //dts consumer properties
-        String server = String.valueOf(tableOptions.get(DTS_BOOTSTRAP_SERVERS));
-        String topic = String.valueOf(tableOptions.get(TOPIC));
-        String sid = String.valueOf(tableOptions.get(DTS_SID));
-        String group = String.valueOf(DTS_GROUP);
-        String user = String.valueOf(tableOptions.get(DTS_USER));
-        String password = String.valueOf(tableOptions.get(DTS_PASSWORD));
+        String server = tableOptions.get(DTS_BOOTSTRAP_SERVERS);
+        String topic = tableOptions.get(TOPIC);
+        String sid = tableOptions.get(DTS_SID);
+        String group = tableOptions.get(DTS_GROUP);
+        String user = tableOptions.get(DTS_USER);
+        String password = tableOptions.get(DTS_PASSWORD);
         long checkpoint = Long.parseLong(tableOptions.get(DTS_CHECKPOINT));
 
 
