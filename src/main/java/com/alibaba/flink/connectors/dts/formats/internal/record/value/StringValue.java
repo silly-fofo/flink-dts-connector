@@ -7,6 +7,9 @@ import com.alibaba.flink.connectors.dts.formats.internal.common.SwallowException
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
 
 /** StringValue. */
 public class StringValue implements Value<ByteBuffer> {
@@ -14,6 +17,7 @@ public class StringValue implements Value<ByteBuffer> {
     public static final String DEFAULT_CHARSET = "UTF-8";
     private ByteBuffer data;
     private String charset;
+    private static ThreadLocal<Map<String, Charset>> charsetMap = new ThreadLocal<>();
 
     public StringValue(ByteBuffer data, String charset) {
         this.data = data;
@@ -51,23 +55,24 @@ public class StringValue implements Value<ByteBuffer> {
         }
 
         // try encode data by specified charset
+        Map<String, Charset> localMap = charsetMap.get();
+        if (null == localMap) {
+            localMap = new HashMap<>();
+            charsetMap.set(localMap);
+        }
         try {
-            if (!StringUtils.isEmpty(charset)) {
-                return new String(data.array(), charset);
-            }
-            return new String(data.array());
-        } catch (UnsupportedEncodingException e1) {
+            Charset charsetObject = localMap.computeIfAbsent(charset, key -> Charset.forName(charset));
+            return new String(data.array(), charsetObject);
+        } catch (Exception e1) {
             try {
-                return new String(data.array(), JDKCharsetMapper.getJDKECharset(charset));
-            } catch (UnsupportedEncodingException e2) {
+                Charset charsetObject = localMap.computeIfAbsent(charset, key -> Charset.forName(JDKCharsetMapper.getJDKECharset(charset)));
+                return new String(data.array(), charsetObject);
+            } catch (Exception e2) {
                 return charset + "_'" + BytesUtil.byteBufferToHexString(data) + "'";
             }
         }
     }
 
-    public String toString(String targetCharset) {
-        return "to impl";
-    }
 
     @Override
     public long size() {
