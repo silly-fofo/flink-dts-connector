@@ -213,7 +213,7 @@ public class DTSSubscribeRowDataDeserializationSchema implements Deserialization
     private int convertToDate(Object dbzObj) {
         if (dbzObj instanceof DateTime) {
             DateTime dateTime = (DateTime)dbzObj;
-            return (int) LocalDate.of(dateTime.getYear(), dateTime.getMonth(), dateTime.getMonth()).toEpochDay();
+            return (int) LocalDate.of(dateTime.getYear(), dateTime.getMonth(), dateTime.getDay()).toEpochDay();
         }
         throw new IllegalArgumentException(
                 "Unable to convert to LocalDate from unexpected value '"
@@ -256,7 +256,7 @@ public class DTSSubscribeRowDataDeserializationSchema implements Deserialization
             return TimestampData.fromEpochMillis(((IntegerNumeric)dbzObj).getData().longValue());
         } else if (dbzObj instanceof UnixTimestamp) {
             Timestamp timestamp = ((UnixTimestamp)dbzObj).toJdbcTimestamp();
-            return TimestampData.fromEpochMillis(timestamp.getTime(), timestamp.getNanos());
+            return TimestampData.fromEpochMillis(timestamp.getTime(), timestamp.getNanos() / 1000);
         } else if (dbzObj instanceof DateTime) {
             DateTime dateTime = (DateTime)dbzObj;
             return TimestampData.fromLocalDateTime(LocalDateTime
