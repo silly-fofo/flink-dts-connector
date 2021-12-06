@@ -15,3 +15,4 @@
 
 com.alibaba.flink.connectors.dts.table.DtsDynamicTableFactory
 com.alibaba.flink.connectors.dts.formats.physicaltable.DTSSubscribeTableSourceFactory
+com.alibaba.flink.connectors.dts.formats.physicaltable.DTSSubscribeAppendTableSourceFactory
