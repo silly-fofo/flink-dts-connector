@@ -1,13 +1,29 @@
 package com.alibaba.flink.connectors.dts.formats.physicaltable;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.flink.api.common.serialization.DeserializationSchema;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
+import java.io.IOException;
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.nio.ByteBuffer;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.regex.Pattern;
+
 import com.alibaba.flink.connectors.dts.formats.internal.common.NullableOptional;
 import com.alibaba.flink.connectors.dts.formats.internal.record.EtlRow;
 import com.alibaba.flink.connectors.dts.formats.internal.record.OperationType;
 import com.alibaba.flink.connectors.dts.formats.internal.record.impl.LazyParseRecordImpl;
-import com.alibaba.flink.connectors.dts.formats.internal.record.value.*;
+import com.alibaba.flink.connectors.dts.formats.internal.record.value.BinaryEncodingObject;
+import com.alibaba.flink.connectors.dts.formats.internal.record.value.DateTime;
+import com.alibaba.flink.connectors.dts.formats.internal.record.value.DecimalNumeric;
+import com.alibaba.flink.connectors.dts.formats.internal.record.value.FloatNumeric;
+import com.alibaba.flink.connectors.dts.formats.internal.record.value.IntegerNumeric;
+import com.alibaba.flink.connectors.dts.formats.internal.record.value.UnixTimestamp;
+import com.alibaba.flink.connectors.dts.formats.internal.record.value.Value;
+
+import org.apache.flink.api.common.serialization.DeserializationSchema;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.table.data.DecimalData;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
@@ -19,17 +35,11 @@ import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.Collector;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.nio.ByteBuffer;
-import java.sql.Timestamp;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.regex.Pattern;
-
-public class DTSSubscribeRowDataDeserializationSchema implements DeserializationSchema<RowData> {
+/**
+ * @author piccaboo
+ * @date 2021/12/01
+ */
+public class DTSSubscribeAppendRowDataDeserializationSchema implements DeserializationSchema<RowData> {
 
     private final String tableName;
 
@@ -54,23 +64,27 @@ public class DTSSubscribeRowDataDeserializationSchema implements Deserialization
 
     private final static String DB_LOG_TIME = "dts_etl_db_log_time";
 
-    public DTSSubscribeRowDataDeserializationSchema(
-            RowType rowType,
-            TypeInformation<RowData> resultTypeInfo,
-            String tableName,
-            boolean isPattern
-    ){
+    private boolean haveOperationType = false;
+
+    public DTSSubscribeAppendRowDataDeserializationSchema(
+        RowType rowType,
+        TypeInformation<RowData> resultTypeInfo,
+        String tableName,
+        boolean isPattern
+    ) {
         this.tableName = tableName;
         this.rowType = rowType;
         this.resultTypeInfo = resultTypeInfo;
         this.isPattern = isPattern;
         this.runtimeConverter = createConverter(rowType);
+        this.haveOperationType = rowType.getFieldNames().contains(OPERATION_TYPE);
     }
 
     @Override
     public RowData deserialize(byte[] message) throws IOException {
         throw new RuntimeException(
-                "Please invoke DTSSubscribeRowDataDeserializationSchema#deserialize(byte[], Collector<RowData>) instead.");
+            "Please invoke DTSSubscribeAppendRowDataDeserializationSchema#deserialize(byte[], Collector<RowData>) "
+                + "instead.");
     }
 
     @Override
@@ -81,10 +95,6 @@ public class DTSSubscribeRowDataDeserializationSchema implements Deserialization
             record.getOperationType()) && !OperationType.DELETE.equals(record.getOperationType())) {
             return;
         }
-        if (StringUtils.isBlank(tableName)) {
-            return;
-        }
-
         if (isPattern) {
             if (!Pattern.matches(tableName, record.getSchema().getFullQualifiedName().get())) {
                 return;
@@ -92,21 +102,26 @@ public class DTSSubscribeRowDataDeserializationSchema implements Deserialization
         } else if (!tableName.equals(record.getSchema().getFullQualifiedName().get())) {
             return;
         }
+
         if (record.getOperationType() == OperationType.INSERT) {
             GenericRowData insert = extractAfterRow(record, RowKind.INSERT);
             insert.setRowKind(RowKind.INSERT);
             out.collect(insert);
         } else if (record.getOperationType() == OperationType.DELETE) {
-            GenericRowData delete = extractBeforeRow(record, RowKind.DELETE);
-            delete.setRowKind(RowKind.DELETE);
-            out.collect(delete);
+            if (haveOperationType) {
+                GenericRowData delete = extractBeforeRow(record, RowKind.DELETE);
+                delete.setRowKind(RowKind.INSERT);
+                out.collect(delete);
+            }
         } else {
-            GenericRowData before = extractBeforeRow(record, RowKind.UPDATE_BEFORE);
-            before.setRowKind(RowKind.UPDATE_BEFORE);
-            out.collect(before);
+            if (haveOperationType) {
+                GenericRowData before = extractBeforeRow(record, RowKind.UPDATE_BEFORE);
+                before.setRowKind(RowKind.INSERT);
+                out.collect(before);
+            }
 
             GenericRowData after = extractAfterRow(record, RowKind.UPDATE_AFTER);
-            after.setRowKind(RowKind.UPDATE_AFTER);
+            after.setRowKind(RowKind.INSERT);
             out.collect(after);
         }
     }
@@ -145,7 +160,6 @@ public class DTSSubscribeRowDataDeserializationSchema implements Deserialization
     private interface DeserializationRuntimeConverter extends Serializable {
         Object convert(Object dbzObj);
     }
-
 
     /**
      * Creates a runtime converter which is null safe.
@@ -213,14 +227,14 @@ public class DTSSubscribeRowDataDeserializationSchema implements Deserialization
         } else if (dbzObj instanceof DateTime) {
             DateTime dateTime = (DateTime)dbzObj;
             return TimestampData.fromLocalDateTime(LocalDateTime
-                    .of(dateTime.getYear(), dateTime.getMonth(), dateTime.getDay(), dateTime.getHour(),
-                            dateTime.getMinute(), dateTime.getSecond(), dateTime.getNaons()));
+                .of(dateTime.getYear(), dateTime.getMonth(), dateTime.getDay(), dateTime.getHour(),
+                    dateTime.getMinute(), dateTime.getSecond(), dateTime.getNaons()));
         }
         throw new IllegalArgumentException(
-                "Unable to convert to TimestampData from unexpected value '"
-                        + dbzObj
-                        + "' of type "
-                        + dbzObj.getClass().getName());
+            "Unable to convert to TimestampData from unexpected value '"
+                + dbzObj
+                + "' of type "
+                + dbzObj.getClass().getName());
     }
 
     private boolean convertToBoolean(Object dbzObj) {
@@ -234,13 +248,13 @@ public class DTSSubscribeRowDataDeserializationSchema implements Deserialization
     private int convertToDate(Object dbzObj) {
         if (dbzObj instanceof DateTime) {
             DateTime dateTime = (DateTime)dbzObj;
-            return (int) LocalDate.of(dateTime.getYear(), dateTime.getMonth(), dateTime.getDay()).toEpochDay();
+            return (int)LocalDate.of(dateTime.getYear(), dateTime.getMonth(), dateTime.getDay()).toEpochDay();
         }
         throw new IllegalArgumentException(
-                "Unable to convert to LocalDate from unexpected value '"
-                        + dbzObj
-                        + "' of type "
-                        + dbzObj.getClass().getName());
+            "Unable to convert to LocalDate from unexpected value '"
+                + dbzObj
+                + "' of type "
+                + dbzObj.getClass().getName());
     }
 
     private int convertToInt(Object dbzObj) {
@@ -266,10 +280,10 @@ public class DTSSubscribeRowDataDeserializationSchema implements Deserialization
         }
         // get number of milliseconds of the day
         throw new IllegalArgumentException(
-                "Unable to convert to Time from unexpected value '"
-                        + dbzObj
-                        + "' of type "
-                        + dbzObj.getClass().getName());
+            "Unable to convert to Time from unexpected value '"
+                + dbzObj
+                + "' of type "
+                + dbzObj.getClass().getName());
     }
 
     private TimestampData convertToLocalTimeZoneTimestamp(Object dbzObj) {
@@ -281,14 +295,14 @@ public class DTSSubscribeRowDataDeserializationSchema implements Deserialization
         } else if (dbzObj instanceof DateTime) {
             DateTime dateTime = (DateTime)dbzObj;
             return TimestampData.fromLocalDateTime(LocalDateTime
-                    .of(dateTime.getYear(), dateTime.getMonth(), dateTime.getDay(), dateTime.getHour(),
-                            dateTime.getMinute(), dateTime.getSecond(), dateTime.getNaons()));
+                .of(dateTime.getYear(), dateTime.getMonth(), dateTime.getDay(), dateTime.getHour(),
+                    dateTime.getMinute(), dateTime.getSecond(), dateTime.getNaons()));
         }
         throw new IllegalArgumentException(
-                "Unable to convert to TimestampData from unexpected value '"
-                        + dbzObj
-                        + "' of type "
-                        + dbzObj.getClass().getName());
+            "Unable to convert to TimestampData from unexpected value '"
+                + dbzObj
+                + "' of type "
+                + dbzObj.getClass().getName());
     }
 
     private float convertToFloat(Object dbzObj) {
@@ -332,7 +346,7 @@ public class DTSSubscribeRowDataDeserializationSchema implements Deserialization
             return bytes;
         } else {
             throw new UnsupportedOperationException(
-                    "Unsupported BYTES value type: " + dbzObj.getClass().getSimpleName());
+                "Unsupported BYTES value type: " + dbzObj.getClass().getSimpleName());
         }
     }
 
@@ -355,10 +369,10 @@ public class DTSSubscribeRowDataDeserializationSchema implements Deserialization
 
     private DeserializationRuntimeConverter createRowConverter(RowType rowType) {
         final DeserializationRuntimeConverter[] fieldConverters =
-                rowType.getFields().stream()
-                        .map(RowType.RowField::getType)
-                        .map(this::createConverter)
-                        .toArray(DeserializationRuntimeConverter[]::new);
+            rowType.getFields().stream()
+                .map(RowType.RowField::getType)
+                .map(this::createConverter)
+                .toArray(DeserializationRuntimeConverter[]::new);
         final String[] fieldNames = rowType.getFieldNames().toArray(new String[0]);
 
         return (dbzObj) -> {
@@ -386,7 +400,7 @@ public class DTSSubscribeRowDataDeserializationSchema implements Deserialization
     }
 
     private Object convertField(
-            DeserializationRuntimeConverter fieldConverter, Object fieldValue) {
+        DeserializationRuntimeConverter fieldConverter, Object fieldValue) {
         if (fieldValue == null) {
             return null;
         } else {
@@ -395,7 +409,7 @@ public class DTSSubscribeRowDataDeserializationSchema implements Deserialization
     }
 
     private DeserializationRuntimeConverter wrapIntoNullableConverter(
-            DeserializationRuntimeConverter converter) {
+        DeserializationRuntimeConverter converter) {
         return (dbzObj) -> {
             if (dbzObj == null) {
                 return null;
@@ -405,3 +419,4 @@ public class DTSSubscribeRowDataDeserializationSchema implements Deserialization
     }
 
 }
+

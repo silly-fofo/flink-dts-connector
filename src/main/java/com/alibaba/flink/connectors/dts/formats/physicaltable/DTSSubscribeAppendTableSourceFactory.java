@@ -1,5 +1,8 @@
 package com.alibaba.flink.connectors.dts.formats.physicaltable;
 
+import java.util.Collections;
+import java.util.Set;
+
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.configuration.ConfigOption;
@@ -16,12 +19,8 @@ import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.types.RowKind;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
-public class DTSSubscribeTableSourceFactory implements DeserializationFormatFactory {
-    public static final String IDENTIFIER = "dts-cdc";
+public class DTSSubscribeAppendTableSourceFactory implements DeserializationFormatFactory {
+    public static final String IDENTIFIER = "dts-append";
 
     public static final ConfigOption<Boolean> DTS_TABLE_NAME_IS_PATTERN = ConfigOptions.key("table.pattern")
         .booleanType()
@@ -29,36 +28,33 @@ public class DTSSubscribeTableSourceFactory implements DeserializationFormatFact
         .withDescription("The table names need to be collected.");
 
     public static final ConfigOption<String> DTS_NEEDED_TABLE = ConfigOptions.key("table.name")
-            .noDefaultValue()
-            .withDescription("The table names need to be collected.");
+        .noDefaultValue()
+        .withDescription("The table names need to be collected.");
 
     @Override
     public DecodingFormat<DeserializationSchema<RowData>> createDecodingFormat(
-            DynamicTableFactory.Context context,
-            ReadableConfig formatOptions) {
+        DynamicTableFactory.Context context,
+        ReadableConfig formatOptions) {
         FactoryUtil.validateFactoryOptions(this, formatOptions);
 
         return new DecodingFormat<DeserializationSchema<RowData>>() {
             @Override
             public DeserializationSchema<RowData> createRuntimeDecoder(
-                    DynamicTableSource.Context context,
-                    DataType producedDataType) {
+                DynamicTableSource.Context context,
+                DataType producedDataType) {
 
                 final RowType rowType = (RowType)producedDataType.getLogicalType();
                 final TypeInformation<RowData> rowDataTypeInfo =
-                        context.createTypeInformation(producedDataType);
-                return new DTSSubscribeRowDataDeserializationSchema(rowType, rowDataTypeInfo,
-                        formatOptions.get(DTS_NEEDED_TABLE), formatOptions.get(DTS_TABLE_NAME_IS_PATTERN));
+                    context.createTypeInformation(producedDataType);
+                return new DTSSubscribeAppendRowDataDeserializationSchema(rowType, rowDataTypeInfo,
+                    formatOptions.get(DTS_NEEDED_TABLE), formatOptions.get(DTS_TABLE_NAME_IS_PATTERN));
             }
 
             @Override
             public ChangelogMode getChangelogMode() {
                 return ChangelogMode.newBuilder()
-                        .addContainedKind(RowKind.INSERT)
-                        .addContainedKind(RowKind.UPDATE_BEFORE)
-                        .addContainedKind(RowKind.UPDATE_AFTER)
-                        .addContainedKind(RowKind.DELETE)
-                        .build();
+                    .addContainedKind(RowKind.INSERT)
+                    .build();
             }
         };
     }
