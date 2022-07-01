@@ -30,6 +30,15 @@ public class FlinkDtsRawConsumer<T> extends FlinkDtsConsumer<T> {
     public FlinkDtsRawConsumer(
             String brokerUrl,
             String topic,
+            String group,
+            long startupOffsetsTimestamp,
+            KafkaDeserializationSchema valueDeserializer) {
+        this(brokerUrl, topic, null, group, null, null, startupOffsetsTimestamp, valueDeserializer, null);
+    }
+
+    public FlinkDtsRawConsumer(
+            String brokerUrl,
+            String topic,
             String sid,
             String group,
             String user,
